@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="generator" content="pandoc">
+  <meta name="author" content="Igor Khorlo">
+  <meta name="keywords" content="sas, sugg_meetup, meetup, berlin, sasusers, sasprogramming, linter, lint, antlr, ast, parsing, saslint, static code analysis, transpiler, source code transpiling">
+  <title>Automating the migration from SAS® Macro to PROC LUA using transpiling</title>
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui">
+      <meta property="og:title" content="Automating the migration from SAS<sup><small>®</small></sup> Macro to PROC LUA using transpiling"/>
+      <link rel="stylesheet" href="reveal.js/css/reveal.css">
+  <style type="text/css">
+      code{white-space: pre-wrap;}
+      span.smallcaps{font-variant: small-caps;}
+      span.underline{text-decoration: underline;}
+      div.column{display: inline-block; vertical-align: top; width: 50%;}
+  </style>
+  <style type="text/css">
+a.sourceLine { display: inline-block; line-height: 1.25; }
+a.sourceLine { pointer-events: none; color: inherit; text-decoration: inherit; }
+a.sourceLine:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode { white-space: pre; position: relative; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+code.sourceCode { white-space: pre-wrap; }
+a.sourceLine { text-indent: -1em; padding-left: 1em; }
+}
+pre.numberSource a.sourceLine
+  { position: relative; left: -4em; }
+pre.numberSource a.sourceLine::before
+  { content: attr(data-line-number);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; pointer-events: all; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+    color: #aaaaaa;
+  }
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+div.sourceCode
+  {  }
+@media screen {
+a.sourceLine::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code span.at { color: #7d9029; } /* Attribute */
+code span.bn { color: #40a070; } /* BaseN */
+code span.bu { } /* BuiltIn */
+code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code span.ch { color: #4070a0; } /* Char */
+code span.cn { color: #880000; } /* Constant */
+code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code span.dt { color: #902000; } /* DataType */
+code span.dv { color: #40a070; } /* DecVal */
+code span.er { color: #ff0000; font-weight: bold; } /* Error */
+code span.ex { } /* Extension */
+code span.fl { color: #40a070; } /* Float */
+code span.fu { color: #06287e; } /* Function */
+code span.im { } /* Import */
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code span.op { color: #666666; } /* Operator */
+code span.ot { color: #007020; } /* Other */
+code span.pp { color: #bc7a00; } /* Preprocessor */
+code span.sc { color: #4070a0; } /* SpecialChar */
+code span.ss { color: #bb6688; } /* SpecialString */
+code span.st { color: #4070a0; } /* String */
+code span.va { color: #19177c; } /* Variable */
+code span.vs { color: #4070a0; } /* VerbatimString */
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+  <link rel="stylesheet" href="reveal.js/css/theme/white.css" id="theme">
+  <!-- Printing and PDF exports -->
+  <script>
+    var link = document.createElement( 'link' );
+    link.rel = 'stylesheet';
+    link.type = 'text/css';
+    link.href = window.location.search.match( /print-pdf/gi ) ? 'reveal.js/css/print/pdf.css' : 'reveal.js/css/print/paper.css';
+    document.getElementsByTagName( 'head' )[0].appendChild( link );
+  </script>
+  <!--[if lt IE 9]>
+  <script src="reveal.js/lib/js/html5shiv.js"></script>
+  <![endif]-->
+  <meta property="og:image" content="assets/sugg.png"/>
+</head>
+<body>
+  <div class="reveal">
+    <div class="slides">
+
+<section id="title-slide">
+  <h1 class="title">Automating the migration from SAS<sup><small>®</small></sup> Macro to PROC LUA using transpiling</h1>
+  <p class="author">Igor Khorlo</p>
+  <p class="date">SAS User Group Germany meetup #3 <img id="container-inline-logo-sugg" src="assets/sugg.png" alt="SAS User Group Germany"> <br/> 23<sup>rd</sup> January 2019 📍 Berlin</p>
+</section>
+
+<section><section id="what-is-lua" class="title-slide slide level1"><h1>What is Lua?</h1></section><section class="slide level2">
+
+<ul>
+<li class="fragment">Introduced in SAS 9.4M3</li>
+<li class="fragment">Lua is a lightweight scripting language designed primarily for embedded use in applications. Written in C.</li>
+<li class="fragment">Comparing to alternatives (like PROC GROOVY) has much less overhead and is easier to use.</li>
+</ul>
+</section><section class="slide level2">
+
+<pre><code>ERROR: SUBMIT block:2: attempt to call a table value
+stack traceback:
+    SUBMIT block:2: in function &#39;iterate&#39;
+    SUBMIT block:9: in function &#39;times&#39;
+    SUBMIT block:13: in main chunk
+ERROR: There was an error submitting the provided code
+NOTE: The SAS System stopped processing this step because of errors.</code></pre>
+</section><section class="slide level2">
+
+<pre><code>ERROR: An unexpected semicolon occurred in the %DO statement. A dummy macro will be compiled.</code></pre>
+</section></section>
+<section><section id="lua-vs-sas-macro-performance" class="title-slide slide level1"><h1>Lua vs SAS Macro performance</h1></section><section id="intro" class="slide level2">
+<h2>Intro</h2>
+<ul>
+<li class="fragment">Visual performance overview using <a href="https://boemskats.com/esm/">Enterprise Session Monitor</a> (ESM) for SAS — software by Boemska <img id="container-inline-logo-boemska" src="assets/boemska.png" alt="Boemska"></li>
+<li class="fragment">Performance monitoring can be also obtained in SAS with <a href="http://support.sas.com/documentation/cdl/en/armref/64756/HTML/default/viewer.htm#p0ea993lrwm83nn1tih7b9wsdxmr.htm">Application Response Measurement</a> (ARM)</li>
+</ul>
+</section></section>
+<section><section id="for-loop" class="title-slide slide level1"><h1>For loop</h1></section><section id="for-loop-n1e7" class="slide level2">
+<h2>For loop (n=1e7)</h2>
+<div class="columns">
+<div class="column" style="width:50%;">
+<pre class="sas"><code>%do i = 1 %to &amp;n;
+  %put &amp;i;
+%end;</code></pre>
+</div><div class="column" style="width:50%;">
+<pre class="sas"><code>for i = 1, n do
+  print(i)
+end</code></pre>
+</div>
+</div>
+</section><section class="slide level2">
+
+<h6 id="for-loop-overview">For loop – overview</h6>
+<p><img data-src="assets/sasm01-full.svg" style="background:none; border:none; box-shadow:none;" /></p>
+</section><section class="slide level2">
+
+<h6 id="for-loop-lua">For loop – Lua</h6>
+<p><img data-src="assets/sasm01_lua1.png" style="background:none; border:none; box-shadow:none;" /></p>
+</section><section class="slide level2">
+
+<p><img data-src="assets/sasm01_lua2.png" style="background:none; border:none; box-shadow:none;" /></p>
+</section><section class="slide level2">
+
+<p><img data-src="assets/sasm01_lua3.png" style="background:none; border:none; box-shadow:none;" /></p>
+</section><section class="slide level2">
+
+<h6 id="for-loop-sas-macro">For loop – SAS Macro</h6>
+<p><img data-src="assets/sasm01_mac1.png" style="background:none; border:none; box-shadow:none;" /></p>
+</section><section class="slide level2">
+
+<p><img data-src="assets/sasm01_mac2.png" style="background:none; border:none; box-shadow:none;" /></p>
+</section><section class="slide level2">
+
+<p><img data-src="assets/sasm01_mac3.png" style="background:none; border:none; box-shadow:none;" /></p>
+</section><section class="slide level2">
+
+<h6 id="utility-files-in-work">Utility files in WORK</h6>
+<pre><code>$ ls -al
+-rw-r--r-- 1 sasdemo 88039424 Oct 20 19:57 #tf0024.sas7butl
+drwx------ 2 sasdemo     1024 Oct 20 19:57 .
+drwx------ 3 sasdemo       96 Oct 20 19:56 ..
+-rw-r--r-- 1 sasdemo    12288 Oct 20 19:57 sasmac1.sas7bcat</code></pre>
+</section></section>
+<section><section id="iteration-over-a-list" class="title-slide slide level1"><h1>Iteration over a list</h1></section><section id="iterating-over-a-list-n1e5" class="slide level2">
+<h2>Iterating over a list (n=1e5)</h2>
+<div class="columns">
+<div class="column" style="width:50%;">
+<pre class="sas"><code>%let list=George Paul Ringo John Foo Bar Baz Macro Polo;
+
+%do i = 1 %to
+  %sysfunc(countw(&amp;list));
+
+  %let item=%scan(&amp;list, &amp;i);
+  %put &amp;item;
+%end;</code></pre>
+</div><div class="column" style="width:50%;">
+<pre class="sas"><code>list = {&quot;George&quot;, &quot;Paul&quot;, &quot;Ringo&quot;, &quot;John&quot;, &quot;Foo&quot;, &quot;Bar&quot;, &quot;Baz&quot;, &quot;Macro&quot;, &quot;Polo&quot;}
+
+for _, i in ipairs(list) do
+  print(i)
+end</code></pre>
+</div>
+</div>
+</section><section id="iterating-over-a-list" class="slide level2">
+<h2>Iterating over a list</h2>
+<p><img data-src="assets/sasm02-full.svg" style="background:none; border:none; box-shadow:none;" /></p>
+</section><section class="slide level2">
+
+<h6 id="iterating-over-a-list-lua">Iterating over a list – Lua</h6>
+<p><img data-src="assets/sasm02_lua1.png" style="background:none; border:none; box-shadow:none;" height="600" /></p>
+</section><section class="slide level2">
+
+<h6 id="iterating-over-a-list-sas-macro">Iterating over a list – SAS Macro</h6>
+<p><img data-src="assets/sasm02_mac1.png" style="background:none; border:none; box-shadow:none;" /></p>
+</section><section class="slide level2">
+
+<p><img data-src="assets/sasm02_mac2.png" style="background:none; border:none; box-shadow:none;" /></p>
+</section></section>
+<section><section id="reading-a-dataset" class="title-slide slide level1"><h1>Reading a dataset</h1></section><section id="reading-a-dataset-1900000-observations-73mb-5-variables" class="slide level2">
+<h2>Reading a dataset (1900000 observations, 73mb, 5 variables)</h2>
+<pre class="sas"><code>data class(drop=i);
+  set sashelp.class;
+  do i = 1 to 100000;
+    output;
+  end;
+  drop i;
+run;</code></pre>
+</section><section id="reading-a-dataset-sas-macro-code" class="slide level2">
+<h2>Reading a dataset – SAS Macro code</h2>
+<pre class="sas"><code>%let dsid = %sysfunc(open(&amp;indat));
+%syscall set(dsid);
+%let nobs = %sysfunc(attrn(&amp;dsid, nlobs));
+%do i=1 %to &amp;nobs;
+  %let rc = %sysfunc(fetchobs(&amp;dsid, &amp;i));
+%end;
+%let rc = %sysfunc(close(&amp;dsid));</code></pre>
+</section><section id="reading-a-dataset-lua-code" class="slide level2">
+<h2>Reading a dataset – Lua code</h2>
+<div class="sourceCode" id="cb10"><pre class="sourceCode lua"><code class="sourceCode lua"><a class="sourceLine" id="cb10-1" data-line-number="1">dsid <span class="op">=</span> sas<span class="op">.</span>open<span class="op">(</span><span class="st">&#39;class&#39;</span><span class="op">)</span></a>
+<a class="sourceLine" id="cb10-2" data-line-number="2"><span class="cf">while</span> sas<span class="op">.</span>next<span class="op">(</span>dsid<span class="op">)</span> <span class="cf">do</span></a>
+<a class="sourceLine" id="cb10-3" data-line-number="3">  name <span class="op">=</span> sas<span class="op">.</span>get_value<span class="op">(</span>dsid<span class="op">,</span> <span class="st">&#39;name&#39;</span><span class="op">)</span></a>
+<a class="sourceLine" id="cb10-4" data-line-number="4">  sex <span class="op">=</span> sas<span class="op">.</span>get_value<span class="op">(</span>dsid<span class="op">,</span> <span class="st">&#39;sex&#39;</span><span class="op">)</span></a>
+<a class="sourceLine" id="cb10-5" data-line-number="5">  age <span class="op">=</span> sas<span class="op">.</span>get_value<span class="op">(</span>dsid<span class="op">,</span> <span class="st">&#39;age&#39;</span><span class="op">)</span></a>
+<a class="sourceLine" id="cb10-6" data-line-number="6">  height <span class="op">=</span> sas<span class="op">.</span>get_value<span class="op">(</span>dsid<span class="op">,</span> <span class="st">&#39;height&#39;</span><span class="op">)</span></a>
+<a class="sourceLine" id="cb10-7" data-line-number="7">  weight <span class="op">=</span> sas<span class="op">.</span>get_value<span class="op">(</span>dsid<span class="op">,</span> <span class="st">&#39;weight&#39;</span><span class="op">)</span></a>
+<a class="sourceLine" id="cb10-8" data-line-number="8"><span class="cf">end</span></a>
+<a class="sourceLine" id="cb10-9" data-line-number="9">sas<span class="op">.</span>close<span class="op">(</span>dsid<span class="op">)</span></a></code></pre></div>
+</section><section id="reading-a-dataset-overview" class="slide level2">
+<h2>Reading a dataset – overview</h2>
+<p><img data-src="assets/sasm03-full.svg" style="background:none; border:none; box-shadow:none;" /></p>
+</section></section>
+<section><section id="migration" class="title-slide slide level1"><h1>Migration</h1></section><section id="transpilers" class="slide level2">
+<h2>Transpilers</h2>
+<ul>
+<li class="fragment">PROC DSTODS2 in SAS</li>
+<li class="fragment">DATA Step is a SAS to C transpiler</li>
+<li class="fragment">Typescript to Javascript</li>
+<li class="fragment">C++ was a transpiler to C at the early development</li>
+</ul>
+</section><section id="sas-macro-to-lua-tranpiler" class="slide level2">
+<h2>SAS Macro to Lua tranpiler</h2>
+<pre class="sas"><code>/* mf_existds.sas */
+/* @number */
+
+%macro mf_existds(libds);
+  %if %sysfunc(exist(&amp;libds))      ne 1 &amp;
+      %sysfunc(exist(&amp;libds,VIEW)) ne 1 %then 0;
+
+  %else 1;
+%mend;
+
+%put {%mf_existds(sashelp.class)};</code></pre>
+</section><section id="lua-equivalent" class="slide level2">
+<h2>Lua equivalent</h2>
+<div class="sourceCode" id="cb12"><pre class="sourceCode lua"><code class="sourceCode lua"><a class="sourceLine" id="cb12-1" data-line-number="1"><span class="co">-- mf_existds.lua</span></a>
+<a class="sourceLine" id="cb12-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb12-3" data-line-number="3"><span class="kw">function</span> mf_existds<span class="op">(</span>libds<span class="op">)</span></a>
+<a class="sourceLine" id="cb12-4" data-line-number="4">  <span class="cf">if</span> sas<span class="op">.</span>exist<span class="op">(</span>libds<span class="op">)</span> <span class="op">~=</span> <span class="dv">1</span> <span class="kw">and</span> </a>
+<a class="sourceLine" id="cb12-5" data-line-number="5">     sas<span class="op">.</span>exist<span class="op">(</span>libds<span class="op">,</span> <span class="st">&#39;VIEW&#39;</span><span class="op">)</span> <span class="op">~=</span> <span class="dv">1</span> <span class="cf">then</span></a>
+<a class="sourceLine" id="cb12-6" data-line-number="6"></a>
+<a class="sourceLine" id="cb12-7" data-line-number="7">    <span class="cf">return</span> <span class="dv">0</span></a>
+<a class="sourceLine" id="cb12-8" data-line-number="8">  <span class="cf">else</span></a>
+<a class="sourceLine" id="cb12-9" data-line-number="9">    <span class="cf">return</span> <span class="dv">1</span></a>
+<a class="sourceLine" id="cb12-10" data-line-number="10">  <span class="cf">end</span></a>
+<a class="sourceLine" id="cb12-11" data-line-number="11"><span class="cf">end</span></a>
+<a class="sourceLine" id="cb12-12" data-line-number="12"></a>
+<a class="sourceLine" id="cb12-13" data-line-number="13"><span class="fu">print</span><span class="op">(</span><span class="st">&#39;{&#39;</span><span class="op">..</span>mf_existds<span class="op">(</span><span class="st">&#39;sashelp.class&#39;</span><span class="op">)..</span><span class="st">&#39;}&#39;</span><span class="op">)</span></a></code></pre></div>
+</section><section id="antlr" class="slide level2">
+<h2>ANTLR</h2>
+<p>Demo</p>
+</section><section id="tree-traversal" class="slide level2">
+<h2>Tree traversal</h2>
+<p><img data-src="assets/tree-walk.png" /></p>
+</section><section class="slide level2">
+
+<h6 id="sasensei-quizz-lua-sas-macro-regex-questions">Sasensei quizz (Lua, SAS Macro, regex questions)</h6>
+<p><a href="https://sasensei.com/test/131" class="uri">https://sasensei.com/test/131</a></p>
+<p><img data-src="assets/sasensei-leaderboard-germany--2019-01-23.png" style="background:none; border:none; box-shadow:none;" height="500" /></p>
+<!--
+ERROR: SUBMIT block:2: attempt to call a table value
+stack traceback:
+    SUBMIT block:2: in function 'iterate'
+    SUBMIT block:9: in function 'times'
+    SUBMIT block:13: in main chunk
+ERROR: There was an error submitting the provided code
+NOTE: The SAS System stopped processing this step because of errors.
+
+
+- [ ] why lua
+- [x] inspire by showing a simple example
+- [ ] reading a dataset
+- [ ] libraries developed, math.huge
+- [x] difference
+- [ ] Rowland methods
+- [ ] & is a lava and proc lua example from allan
+- [ ] speech about value of migration??? histers?
+- [x] intro to transpilers
+- [x] ds2ds2 example
+- [x] demo
+
+ -Dragon book p 57 Figure 2.12
+
+asd
+asd
+a
+sds
+-->
+</section></section>
+    </div>
+  </div>
+
+  <script src="reveal.js/lib/js/head.min.js"></script>
+  <script src="reveal.js/js/reveal.js"></script>
+
+  <script>
+
+      // Full list of configuration options available at:
+      // https://github.com/hakimel/reveal.js#configuration
+      Reveal.initialize({
+        // Push each slide change to the browser history
+        history: true,
+        // Apply a 3D roll to links on hover
+        rollingLinks: true,
+        // Transition style
+        transition: 'slide', // none/fade/slide/convex/concave/zoom
+
+        // Optional reveal.js plugins
+        dependencies: [
+          { src: 'reveal.js/lib/js/classList.js', condition: function() { return !document.body.classList; } },
+          { src: 'reveal.js/plugin/zoom-js/zoom.js', async: true },
+          { src: 'reveal.js/plugin/notes/notes.js', async: true }
+        ]
+      });
+    </script>
+    </body>
+</html>
